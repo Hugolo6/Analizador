@@ -5,7 +5,7 @@ from lexico.Oplogicos import listar_operadores_logicos
  
 def main():
     print("=" * 100)
-    print("ANALIZADOR LÉXICO PARA COMPILADOR")
+    print("ANALIZADOR LÉXICO")
     print("=" * 100)
  
     # 1. Mostrar tablas de tokens reconocidos
@@ -17,16 +17,16 @@ def main():
  
     # 2. Ejemplo de análisis sobre código fuente
     codigo_fuente = """
-start
-    Int x = 10;
-    Int y = 20;
-    float promedio = 0;
-    if x <= y {
+anf
+    gz x = 10;
+    gz y = 20;
+    fl promedio = 0;
+    wen x <= y {
         promedio = x + y;
-        imprimir(promedio);
+        dru (promedio);
     }
-    while x > 0 {
-        leer(x);
+    war x > 0 {
+        les(x);
         x = x - 1;
     }
 end
