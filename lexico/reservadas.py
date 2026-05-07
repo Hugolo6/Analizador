@@ -313,10 +313,29 @@ class AnalizadorLexico:
     # Helpers de reconocimiento
     # ------------------------------------------------------------------
     def es_palabra_reservada(self, palabra: str):
-        """Retorna el dict de la palabra reservada o None."""
+        """Retorna el dict de la palabra reservada o None.
+        Busca tanto en las claves como en los tokens cortos (tk).
+        También reconoce variantes comunes."""
+        # Primero busca en las claves (ej. 'start', 'end', 'if')
         for clave, info in PALABRAS_RESERVADAS.items():
             if palabra.lower() == clave.lower():
                 return info
+        
+        # Luego busca en los tokens cortos (ej. 'anf', 'end', 'wen')
+        for clave, info in PALABRAS_RESERVADAS.items():
+            if palabra.lower() == info['tk'].lower():
+                return info
+        
+        # Variantes comunes/alternativas
+        variantes = {
+            'anb': 'start',    # anb es variante de anf
+            'anf': 'start',    # anf es el token corto de start
+        }
+        
+        if palabra.lower() in variantes:
+            clave = variantes[palabra.lower()]
+            return PALABRAS_RESERVADAS.get(clave, None)
+        
         return None
  
     def es_tipo_dato(self, lexema: str):
@@ -333,167 +352,116 @@ class AnalizadorLexico:
     # ------------------------------------------------------------------
     # Tokenización básica
     # ------------------------------------------------------------------
+
+    # Ya no se usa es_parecida_a_reservada, ahora solo se aceptan tokens exactos
+
     def tokenizar(self, fuente: str) -> list[Token]:
-        """
-        Recorre la cadena fuente y genera la lista de tokens.
-        Reconoce: palabras clave, identificadores, enteros, operadores
-        dobles (==, <=, >=, &&, ||) y operadores/delimitadores simples.
-        """
-        self.tokens = []
-        self.errores = []
-        self.linea_actual = 1
-        self.columna_actual = 1
- 
-        i = 0
-        n = len(fuente)
- 
-        while i < n:
-            ch = fuente[i]
- 
-            # Salto de línea
-            if ch == '\n':
-                self.linea_actual += 1
-                self.columna_actual = 1
-                i += 1
-                continue
- 
-            # Espacios / tabs
-            if ch in (' ', '\t', '\r'):
-                self.columna_actual += 1
-                i += 1
-                continue
- 
-            col_inicio = self.columna_actual
- 
-            # ---- Operadores dobles: ==  <=  >=  &&  || ----
-            if i + 1 < n:
-                doble = fuente[i:i+2]
-                if doble in ('==', '<=', '>=', '&&', '||'):
-                    from lexico.Oplogicos import OPERADORES_LOGICOS
-                    info = OPERADORES_LOGICOS.get(doble)
-                    if info:
+            self.tokens = []
+            self.errores = []
+            self.linea_actual = 1
+            self.columna_actual = 1
+            i = 0
+            n = len(fuente)
+
+            while i < n:
+                ch = fuente[i]
+
+                # 1. Ignorar espacios y saltos (esto se queda igual)
+                if ch == '\n':
+                    self.linea_actual += 1
+                    self.columna_actual = 1
+                    i += 1
+                    continue
+                if ch in (' ', '\t', '\r'):
+                    self.columna_actual += 1
+                    i += 1
+                    continue
+
+                col_inicio = self.columna_actual
+
+                # 2. PRIORIDAD: BLOQUES DE LETRAS (Palabras reservadas o Identificadores)
+                # Esto evita que se validen letra por letra
+                if ch.isalpha() or ch == '_':
+                    j = i
+                    while j < n and (fuente[j].isalnum() or fuente[j] == '_'):
+                        j += 1
+                    lexema = fuente[i:j]
+                    
+                    # Ahora evaluamos el bloque completo
+                    info_res = self.es_palabra_reservada(lexema)
+                    if info_res:
                         tok = Token(
-                            tipo=info['tipo'],
-                            lexema=doble,
-                            tk=info['tk'],
+                            tipo=info_res['tipo'],
+                            lexema=lexema, # Aquí usas el lexema tal cual (ej. 'anf')
+                            tk=info_res['tk'],
                             linea=self.linea_actual,
                             columna=col_inicio,
                             es_reservada=True,
                         )
+                    else:
+                        # Si no es reservada, vemos si es un identificador válido
+                        info_td = self.es_tipo_dato(lexema)
+                        if info_td:
+                            tok = Token(
+                                tipo=info_td['tipo'],
+                                lexema=lexema,
+                                tk=info_td['tk'],
+                                linea=self.linea_actual,
+                                columna=col_inicio,
+                                es_reservada=False,
+                            )
+                        else:
+                            # Si no es ninguna, ahora sí es un error de bloque
+                            tok = Token(TipoToken.DESCONOCIDO, lexema, None, self.linea_actual, col_inicio)
+                            self.errores.append(ErrorLexico("TOKEN_DESCONOCIDO", lexema, self.linea_actual, col_inicio, f"Lexema '{lexema}' no reconocido"))
+
+                    self.tokens.append(tok)
+                    self.columna_actual += (j - i)
+                    i = j
+                    continue
+
+                # 3. Operadores dobles (==, <=, etc.)
+                if i + 1 < n:
+                    doble = fuente[i:i+2]
+                    if doble in ('==', '<=', '>=', '&&', '||'):
+                        from lexico.Oplogicos import OPERADORES_LOGICOS
+                        info = OPERADORES_LOGICOS.get(doble)
+                        tok = Token(info['tipo'], doble, info['tk'], self.linea_actual, col_inicio, True)
                         self.tokens.append(tok)
                         self.columna_actual += 2
                         i += 2
                         continue
- 
-            # ---- Operadores / delimitadores simples ----
-            info_op = self.es_operador_simple(ch)
-            if info_op:
-                tok = Token(
-                    tipo=info_op['tipo'],
-                    lexema=ch,
-                    tk=info_op['tk'],
-                    linea=self.linea_actual,
-                    columna=col_inicio,
-                    es_reservada=True,
-                )
-                self.tokens.append(tok)
+
+                # 4. Operadores simples (+, -, =, etc.)
+                info_op = self.es_operador_simple(ch)
+                if info_op:
+                    tok = Token(info_op['tipo'], ch, info_op['tk'], self.linea_actual, col_inicio, True)
+                    self.tokens.append(tok)
+                    self.columna_actual += 1
+                    i += 1
+                    continue
+
+                # 5. Números (Bloque de dígitos)
+                if ch.isdigit():
+                    j = i
+                    while j < n and fuente[j].isdigit():
+                        j += 1
+                    lexema = fuente[i:j]
+                    info_td = TIPOS_DATOS['entero']
+                    tok = Token(info_td['tipo'], lexema, info_td['tk'], self.linea_actual, col_inicio)
+                    self.tokens.append(tok)
+                    self.columna_actual += (j - i)
+                    i = j
+                    continue
+
+                # 6. Si nada de lo anterior funcionó, es un caracter realmente inválido (ej. @, $, #)
+                self.errores.append(ErrorLexico("CARACTER_INVALIDO", ch, self.linea_actual, col_inicio, f"Carácter '{ch}' no válido"))
+                self.tokens.append(Token(TipoToken.DESCONOCIDO, ch, None, self.linea_actual, col_inicio))
                 self.columna_actual += 1
                 i += 1
-                continue
- 
-            # ---- Palabras (reservadas o identificadores/letras) ----
-            if ch.isalpha() or ch == '_':
-                j = i
-                while j < n and (fuente[j].isalnum() or fuente[j] == '_'):
-                    j += 1
-                lexema = fuente[i:j]
-                info_res = self.es_palabra_reservada(lexema)
-                if info_res:
-                    tok = Token(
-                        tipo=info_res['tipo'],
-                        lexema=info_res['lexema'],
-                        tk=info_res['tk'],
-                        linea=self.linea_actual,
-                        columna=col_inicio,
-                        es_reservada=True,
-                    )
-                else:
-                    # Identificador o letra
-                    info_td = self.es_tipo_dato(lexema)
-                    if info_td:
-                        tok = Token(
-                            tipo=info_td['tipo'],
-                            lexema=lexema,
-                            tk=info_td['tk'],
-                            linea=self.linea_actual,
-                            columna=col_inicio,
-                            es_reservada=False,
-                        )
-                    else:
-                        tok = Token(
-                            tipo=TipoToken.DESCONOCIDO,
-                            lexema=lexema,
-                            tk=None,
-                            linea=self.linea_actual,
-                            columna=col_inicio,
-                            es_reservada=False,
-                        )
-                        self.errores.append(
-                            ErrorLexico(
-                                "TOKEN_DESCONOCIDO", lexema,
-                                self.linea_actual, col_inicio,
-                                f"Lexema '{lexema}' no reconocido"
-                            )
-                        )
-                self.tokens.append(tok)
-                self.columna_actual += (j - i)
-                i = j
-                continue
- 
-            # ---- Números enteros ----
-            if ch.isdigit():
-                j = i
-                while j < n and fuente[j].isdigit():
-                    j += 1
-                lexema = fuente[i:j]
-                info_td = TIPOS_DATOS['entero']
-                tok = Token(
-                    tipo=info_td['tipo'],
-                    lexema=lexema,
-                    tk=info_td['tk'],
-                    linea=self.linea_actual,
-                    columna=col_inicio,
-                    es_reservada=False,
-                )
-                self.tokens.append(tok)
-                self.columna_actual += (j - i)
-                i = j
-                continue
- 
-            # ---- Carácter desconocido ----
-            self.errores.append(
-                ErrorLexico(
-                    "CARACTER_INVALIDO", ch,
-                    self.linea_actual, col_inicio,
-                    f"Carácter '{ch}' no válido"
-                )
-            )
-            tok = Token(
-                tipo=TipoToken.DESCONOCIDO,
-                lexema=ch,
-                tk=None,
-                linea=self.linea_actual,
-                columna=col_inicio,
-            )
-            self.tokens.append(tok)
-            self.columna_actual += 1
-            i += 1
- 
-        # Token de fin de archivo
-        self.tokens.append(
-            Token(TipoToken.EOF, '', 'EOF', self.linea_actual, self.columna_actual)
-        )
-        return self.tokens
+
+            self.tokens.append(Token(TipoToken.EOF, '', 'EOF', self.linea_actual, self.columna_actual))
+            return self.tokens
  
     # ------------------------------------------------------------------
     # Reporte
