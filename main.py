@@ -1,3 +1,4 @@
+from semantico.analizador import AnalizadorSemantico
 from lexico.reservadas import AnalizadorLexico, listar_palabras_reservadas
 from lexico.Oplogicos import listar_operadores_logicos
 from sintactico.parser import Parser
@@ -63,17 +64,12 @@ def analizar_programa(codigo_fuente):
     analizador_lexico = AnalizadorLexico()
     tokens = analizador_lexico.tokenizar(codigo_fuente)
     
-    print("\n>>> TOKENS GENERADOS <<<")
-    analizador_lexico.imprimir_tokens()
-    
     if analizador_lexico.errores:
         print("\n>>> ERRORES LÉXICOS <<<")
         analizador_lexico.imprimir_errores()
         print(f"\nNo se puede proceder al análisis sintáctico debido a errores léxicos.")
         return
-    
-    print(f"\n[OK] Análisis léxico exitoso: {len(tokens)} tokens generados")
-    
+        
     # FASE 2: ANÁLISIS SINTÁCTICO
     print("\n" + "=" * 100)
     print("ANÁLISIS SINTÁCTICO")
@@ -82,17 +78,27 @@ def analizar_programa(codigo_fuente):
     parser = Parser(tokens)
     arbol = parser.parsear()
     
-    # Mostrar resultados
     if parser.errores:
         print("\n[ERROR] Se encontraron ERRORES SINTÁCTICOS:")
         parser.imprimir_errores()
-    else:
-        print("[OK] Análisis sintáctico exitoso\n")
-        print(">>> ÁRBOL DE SINTAXIS ABSTRACTA (AST) <<<")
-        parser.imprimir_arbol()
+        return # Detenemos aquí si hay errores sintácticos
+        
+    print("[OK] Análisis sintáctico exitoso")
     
-    print(f"\nTotal errores sintácticos: {len(parser.errores)}")
-
+    # FASE 3: ANÁLISIS SEMÁNTICO (Aquí entras tú)
+    print("\n" + "=" * 100)
+    print("ANÁLISIS SEMÁNTICO")
+    print("=" * 100)
+    
+    analizador_semantico = AnalizadorSemantico()
+    errores_semanticos = analizador_semantico.analizar(arbol)
+    
+    if errores_semanticos:
+        print("\n[ERROR] Se encontraron ERRORES SEMÁNTICOS:")
+        for error in errores_semanticos:
+            print(error)
+    else:
+        print("[OK] Análisis semántico exitoso. El código es 100% válido.")
 
 if __name__ == "__main__":
     main()
