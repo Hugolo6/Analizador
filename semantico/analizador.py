@@ -28,7 +28,7 @@ class TablaSimbolos:
             if nombre in ambito:
                 return ambito[nombre]
         return None
-
+## gola mafr
 
 class AnalizadorSemantico:
     """Recorre el AST para verificar tipos y declaraciones."""
