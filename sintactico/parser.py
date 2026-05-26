@@ -447,10 +447,13 @@ class Parser:
         if not self.consumir(TipoToken.PAR_IZQ, "( (paréntesis izquierdo)"):
             return None
         
-        # Inicialización
+        # Inicialización: puede ser una asignación o una declaración (ej. gz i = 0)
         inicializacion = None
-        if self.token_actual and self.token_actual.tipo == TipoToken.IDENTIFICADOR:
-            inicializacion = self.analizar_asignacion_sin_punto()
+        if self.token_actual:
+            if self.token_actual.tipo == TipoToken.IDENTIFICADOR:
+                inicializacion = self.analizar_asignacion_sin_punto()
+            elif self.es_tipo_dato():
+                inicializacion = self.analizar_declaracion_sin_punto()
         
         if not self.consumir(TipoToken.PUNTO_CON, "; (punto y coma)"):
             return None
@@ -494,6 +497,33 @@ class Parser:
         
         expresion = self.analizar_expresion()
         return Asignacion(id_token, expresion) if expresion else None
+
+    def analizar_declaracion_sin_punto(self):
+        """
+        Analiza una declaración dentro de un contexto sin punto y coma final
+        (por ejemplo, la inicialización dentro de un `for`).
+        Forma: tipo IDENTIFICADOR ASIG expresion
+        """
+        tipo_token = self.token_actual
+        if not self.es_tipo_dato():
+            return None
+
+        # Consumimos el token de tipo (gz, fl, str)
+        if not self.consumir(tipo_token.tipo):
+            return None
+
+        id_token = self.consumir(TipoToken.IDENTIFICADOR, "IDENTIFICADOR")
+        if not id_token:
+            return None
+
+        if not self.consumir(TipoToken.ASIG, "= (asignación)"):
+            return None
+
+        expresion = self.analizar_expresion()
+        if not expresion:
+            return None
+
+        return Declaracion(tipo_token, id_token, expresion)
     
     def analizar_lectura(self):
         """

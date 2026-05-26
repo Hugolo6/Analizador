@@ -96,6 +96,18 @@ end
 
 ---
 
+### Cadenas literales
+
+Las cadenas literales ahora se escriben entre dobles comillas. Ejemplo:
+
+```
+anb
+    dru("Hola mundo");
+end
+```
+
+Internamente el analizador léxico reconoce el texto entre `"` y `"` como un literal de tipo cadena, permitiendo espacios y secuencias de escape simples (`\n`, `\t`, `\"`).
+
 ## Fases de compilación
 
 ```

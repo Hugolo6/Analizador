@@ -1,0 +1,4 @@
+anb
+    String saludo = "Hola desde variable";
+    dru(saludo);
+end

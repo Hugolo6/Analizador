@@ -1,0 +1,5 @@
+anb
+    gz x = 5;
+    dru("El valor de x es:");
+    dru(x);
+end

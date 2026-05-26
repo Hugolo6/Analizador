@@ -52,6 +52,19 @@ convierte en una lista de **tokens** — las unidades mínimas con significado d
 
 `+` `-` `*` `/` `=` `;` `(` `)` `{` `}` `,` `"`
 
+### Cadenas literales
+
+El analizador léxico reconoce cadenas entre dobles comillas `"..."`. El
+contenido entre comillas (permitiendo espacios y secuencias de escape simples
+como `\n`, `\t`, `\"`) se tokeniza como un literal de tipo `LETRA`.
+
+Ejemplo:
+
+```
+Entrada:  dru("Hola mundo");
+Token:    Hola mundo   LETRA   buc   L1:C5
+```
+
 ---
 
 ## Clase principal: `AnalizadorLexico`

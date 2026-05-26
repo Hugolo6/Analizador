@@ -1,0 +1,8 @@
+anb
+    gz suma = 0;
+    fur (gz i = 0; i < 5; i = i + 1) {
+        suma = suma + i;
+    }
+    dru("Suma:");
+    dru(suma);
+end

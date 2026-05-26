@@ -379,6 +379,47 @@ class AnalizadorLexico:
 
                 col_inicio = self.columna_actual
 
+                # 2.a. Cadenas entre dobles comillas: "..."
+                if ch == '"':
+                    j = i + 1
+                    valor = ''
+                    cerrado = False
+                    while j < n:
+                        if fuente[j] == '"':
+                            cerrado = True
+                            break
+                        # Soportar secuencias de escape simples: \" \\ \n \t \r
+                        if fuente[j] == '\\' and j + 1 < n:
+                            esc = fuente[j+1]
+                            if esc == 'n':
+                                valor += '\n'
+                            elif esc == 't':
+                                valor += '\t'
+                            elif esc == 'r':
+                                valor += '\r'
+                            else:
+                                valor += esc
+                            j += 2
+                            continue
+                        valor += fuente[j]
+                        j += 1
+
+                    if not cerrado:
+                        # Error: cadena no cerrada
+                        resto = fuente[i: min(n, i+20)]
+                        self.errores.append(ErrorLexico("CADENA_NO_CERRADA", resto, self.linea_actual, col_inicio, 'Cadena no cerrada (falta ")'))
+                        # Consumimos hasta EOF
+                        j = n
+                    else:
+                        # Consumimos también la comilla de cierre
+                        j += 1
+                        info_td = TIPOS_DATOS['letra']
+                        tok = Token(info_td['tipo'], valor, info_td['tk'], self.linea_actual, col_inicio)
+                        self.tokens.append(tok)
+                        self.columna_actual += (j - i)
+                        i = j
+                        continue
+
                 # 2. PRIORIDAD: BLOQUES DE LETRAS (Palabras reservadas o Identificadores)
                 # Esto evita que se validen letra por letra
                 if ch.isalpha() or ch == '_':
