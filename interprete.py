@@ -220,6 +220,8 @@ class Interprete:
         tok = nodo.token
         if tok.tipo == TipoToken.ENTERO:
             return int(tok.lexema)
+        if tok.tipo == TipoToken.FLOAT:
+            return float(tok.lexema)
         if tok.tipo in (TipoToken.LETRA, TipoToken.STRING):
             return tok.lexema
         if tok.tipo == TipoToken.IDENTIFICADOR:
@@ -258,6 +260,10 @@ class Interprete:
 
     def _formatear(self, valor):
         """Convierte el valor a string para dru()."""
-        if isinstance(valor, float) and valor == int(valor):
-            return str(int(valor))
+        # Si el valor es float y está muy cerca de un entero, mostrar como entero
+        if isinstance(valor, float):
+            # Tolerancia para evitar errores por punto flotante
+            if abs(valor - round(valor)) < 1e-9:
+                return str(int(round(valor)))
+            return str(valor)
         return str(valor)

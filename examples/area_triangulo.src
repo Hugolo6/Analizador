@@ -1,0 +1,7 @@
+anb
+    gz base = 5;
+    fl altura = 3.5;
+    fl area = (base * altura) / 2;
+    dru("Area del triangulo");
+    dru(area);
+end

@@ -693,6 +693,12 @@ class Parser:
             token = self.token_actual
             self.avanzar()
             return Literal(token)
+
+        # Literal flotante
+        if tipo == TipoToken.FLOAT:
+            token = self.token_actual
+            self.avanzar()
+            return Literal(token)
         
         # Literal letra/cadena
         elif tipo == TipoToken.LETRA:

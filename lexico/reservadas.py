@@ -482,11 +482,26 @@ class AnalizadorLexico:
                     i += 1
                     continue
 
-                # 5. Números (Bloque de dígitos)
+                # 5. Números (Bloque de dígitos) — soporta enteros y flotantes
                 if ch.isdigit():
                     j = i
                     while j < n and fuente[j].isdigit():
                         j += 1
+
+                    # Detectar parte decimal: '.' seguido de al menos un dígito
+                    if j < n and fuente[j] == '.' and (j + 1) < n and fuente[j+1].isdigit():
+                        j2 = j + 1
+                        while j2 < n and fuente[j2].isdigit():
+                            j2 += 1
+                        lexema = fuente[i:j2]
+                        # Token flotante
+                        tok = Token(TipoToken.FLOAT, lexema, 'fl', self.linea_actual, col_inicio)
+                        self.tokens.append(tok)
+                        self.columna_actual += (j2 - i)
+                        i = j2
+                        continue
+
+                    # Si no es flotante, es entero
                     lexema = fuente[i:j]
                     info_td = TIPOS_DATOS['entero']
                     tok = Token(info_td['tipo'], lexema, info_td['tk'], self.linea_actual, col_inicio)

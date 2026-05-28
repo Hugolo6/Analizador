@@ -11,10 +11,10 @@ la estructura jerárquica del programa.
 
 ## Archivos
 
-| Archivo | Responsabilidad |
-|---|---|
-| `parser.py` | Nodos del AST + clase `Parser` (descendente recursivo) |
-| `__init__.py` | Marca el directorio como paquete Python |
+| Archivo         | Responsabilidad                                          |
+| --------------- | -------------------------------------------------------- |
+| `parser.py`   | Nodos del AST + clase `Parser` (descendente recursivo) |
+| `__init__.py` | Marca el directorio como paquete Python                  |
 
 ---
 
@@ -65,20 +65,20 @@ primaria    ::= ENTERO | LETRA | IDENTIFICADOR
 
 ## Nodos del AST
 
-| Clase | Descripción | Atributos principales |
-|---|---|---|
-| `Programa` | Nodo raíz | `sentencias: list` |
-| `Declaracion` | `gz x = 10;` | `tipo_token`, `identificador`, `expresion` |
-| `Asignacion` | `x = x + 1;` | `identificador`, `expresion` |
-| `IfStatement` | `wen cond { } son { }` | `condicion`, `bloque_if`, `bloque_else` |
-| `WhileStatement` | `war cond { }` | `condicion`, `bloque` |
-| `ForStatement` | `fur (init; cond; upd) { }` | `inicializacion`, `condicion`, `actualizacion`, `bloque` |
-| `Lectura` | `les(x);` | `identificador` |
-| `Escritura` | `dru(expr);` | `expresion` |
-| `ExpresionBinaria` | `a + b` | `izquierda`, `operador`, `derecha` |
-| `ExpresionUnaria` | `-a` | `operador`, `operando` |
-| `Literal` | `42`, `x` | `token` |
-| `LlamadaFuncion` | `f(a, b)` | `nombre`, `argumentos` |
+| Clase                | Descripción                  | Atributos principales                                            |
+| -------------------- | ----------------------------- | ---------------------------------------------------------------- |
+| `Programa`         | Nodo raíz                    | `sentencias: list`                                             |
+| `Declaracion`      | `gz x = 10;`                | `tipo_token`, `identificador`, `expresion`                 |
+| `Asignacion`       | `x = x + 1;`                | `identificador`, `expresion`                                 |
+| `IfStatement`      | `wen cond { } son { }`      | `condicion`, `bloque_if`, `bloque_else`                    |
+| `WhileStatement`   | `war cond { }`              | `condicion`, `bloque`                                        |
+| `ForStatement`     | `fur (init; cond; upd) { }` | `inicializacion`, `condicion`, `actualizacion`, `bloque` |
+| `Lectura`          | `les(x);`                   | `identificador`                                                |
+| `Escritura`        | `dru(expr);`                | `expresion`                                                    |
+| `ExpresionBinaria` | `a + b`                     | `izquierda`, `operador`, `derecha`                         |
+| `ExpresionUnaria`  | `-a`                        | `operador`, `operando`                                       |
+| `Literal`          | `42`, `x`                 | `token`                                                        |
+| `LlamadaFuncion`   | `f(a, b)`                   | `nombre`, `argumentos`                                       |
 
 ---
 
@@ -106,6 +106,7 @@ inesperado registra el error y **detiene el análisis de esa rama**, devolviendo
 ## Ejemplo de AST
 
 Código:
+
 ```
 anb
     gz x = 10;
@@ -114,6 +115,7 @@ end
 ```
 
 AST resultante:
+
 ```
 Programa
   Declaracion: x (gz)
@@ -132,11 +134,11 @@ Programa
 
 ## Errores que detecta
 
-| Situación | Ejemplo | Mensaje |
-|---|---|---|
-| Falta `;` al final | `gz x = 5` | Se esperaba `;` pero se encontró ... |
-| Bloque sin cerrar | `wen x > 0 {` | Se esperaba `}` pero se encontró EOF |
-| Token inesperado | `gz = 10;` | Se esperaba IDENTIFICADOR |
-| Expresión inválida | `gz x = ;` | Expresión inesperada `;` |
+| Situación           | Ejemplo         | Mensaje                                 |
+| -------------------- | --------------- | --------------------------------------- |
+| Falta `;` al final | `gz x = 5`    | Se esperaba `;` pero se encontró ... |
+| Bloque sin cerrar    | `wen x > 0 {` | Se esperaba `}` pero se encontró EOF |
+| Token inesperado     | `gz = 10;`    | Se esperaba IDENTIFICADOR               |
+| Expresión inválida | `gz x = ;`    | Expresión inesperada `;`             |
 
 > **Nota:** El Parser solo se ejecuta si el Analizador Léxico no reportó errores.
